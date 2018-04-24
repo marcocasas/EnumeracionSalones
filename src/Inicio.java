@@ -24,8 +24,11 @@ public class Inicio extends JFrame {
 	private JTextField curso_tb;
 	
 	int salones;
-	ArrayList <String> cursos = new ArrayList<String>();
+	ArrayList <Curso> cursos = new ArrayList<Curso>();
 	ArrayList <String> relaciones = new ArrayList<String>();
+	ArrayList <String> relacionesExistentes = new ArrayList<String>();
+	ArrayList <String> HORARIOS = new ArrayList<String>();
+	ArrayList <Curso> cursosAsignados = new ArrayList<Curso>();
 
 	/**
 	 * Launch the application.
@@ -47,6 +50,22 @@ public class Inicio extends JFrame {
 	 * Create the frame.
 	 */
 	public Inicio() {
+		HORARIOS.add("7:00");
+		HORARIOS.add("8:00");
+		HORARIOS.add("9:00");
+		HORARIOS.add("10:00");
+		HORARIOS.add("11:00");
+		HORARIOS.add("12:00");
+		HORARIOS.add("13:00");
+		HORARIOS.add("14:00");
+		HORARIOS.add("15:00");
+		HORARIOS.add("16:00");
+		HORARIOS.add("17:00");
+		HORARIOS.add("18:00");
+		HORARIOS.add("19:00");
+		HORARIOS.add("20:00");
+		HORARIOS.add("21:00");
+		
 		setTitle("Inicio");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 548, 382);
@@ -106,10 +125,29 @@ public class Inicio extends JFrame {
 		JComboBox ddlhorarios = new JComboBox();
 		ddlhorarios.setBounds(343, 189, 164, 24);
 		contentPane.add(ddlhorarios);
+		ddlhorarios.addItem("7:00");
+		ddlhorarios.addItem("8:00");
+		ddlhorarios.addItem("9:00");
+		ddlhorarios.addItem("10:00");
+		ddlhorarios.addItem("11:00");
+		ddlhorarios.addItem("12:00");
+		ddlhorarios.addItem("13:00");
+		ddlhorarios.addItem("14:00");
+		ddlhorarios.addItem("15:00");
+		ddlhorarios.addItem("16:00");
+		ddlhorarios.addItem("17:00");
+		ddlhorarios.addItem("18:00");
+		ddlhorarios.addItem("19:00");
+		ddlhorarios.addItem("20:00");
+		ddlhorarios.addItem("21:00");
 		
 		JComboBox ddlrestricciones = new JComboBox();
 		ddlrestricciones.setBounds(343, 226, 164, 24);
 		contentPane.add(ddlrestricciones);
+		ddlrestricciones.addItem(">");
+		ddlrestricciones.addItem(">=");
+		ddlrestricciones.addItem("<");
+		ddlrestricciones.addItem("<=");
 		
 		JLabel lblCurso = new JLabel("Curso:");
 		lblCurso.setBounds(235, 158, 70, 15);
@@ -124,7 +162,47 @@ public class Inicio extends JFrame {
 		contentPane.add(lblNewLabel);
 		
 		JButton btncalculadist = new JButton("Calcular distribución");
-		btncalculadist.setBounds(175, 296, 189, 25);
+		btncalculadist.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				boolean done = false;
+				String horarioAsignado;
+				
+				while (!done) {
+					int max = 0;
+					int indiceMax = 0;
+					int i = 0;
+					
+					for(Curso c : cursos) {
+						int numDepActual = c.cuentaDependencias();
+						if(c.cuentaDependencias() > max) {
+							max = numDepActual;
+							indiceMax = i;
+							i++;
+						}
+					}
+					
+					Curso curActual = cursos.get(indiceMax);
+					horarioAsignado = curActual.estableceHorario(HORARIOS);
+					cursosAsignados.add(curActual);
+					cursos.remove(curActual);
+					
+					for(String cursosDep : curActual.dependencias) {
+						System.out.println(cursosDep);
+						//NO FUNCIONA
+						System.out.println(cursos.indexOf(new Curso(cursosDep)));
+						cursos.get(cursos.indexOf(new Curso(cursosDep))).agregaRestriccionHorario(horarioAsignado);;
+					}
+					
+					done = cursos.isEmpty();
+				}
+				
+				for(Curso c: cursosAsignados) {
+					System.out.println(c.toString());
+					System.out.println(c.horario);
+				}
+			}
+		});
+		btncalculadist.setBounds(328, 299, 179, 25);
 		contentPane.add(btncalculadist);
 		
 		JButton btncurso = new JButton("Añadir curso");
@@ -133,12 +211,12 @@ public class Inicio extends JFrame {
 				String curso_aux = curso_tb.getText();
 				
 				if(!curso_aux.equals("")) {
-					cursos.add(curso_aux);
+					cursos.add(new Curso(curso_aux));
 				}
 				
 				ddlcursos.setModel(new DefaultComboBoxModel(cursos.toArray()));
-				curso_tb.setText("");
 				cbrelaciones.setModel(new DefaultComboBoxModel(cursos.toArray()));
+				curso_tb.setText("");
 			}
 		});
 		btncurso.setBounds(343, 39, 164, 25);
@@ -153,7 +231,9 @@ public class Inicio extends JFrame {
 		JButton btnagregarel = new JButton("Agregar relación");
 		btnagregarel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				textPane.setText(textPane.getText() + cbrelaciones.getSelectedItem() + "--");
+				String curso = cbrelaciones.getSelectedItem().toString();
+				textPane.setText(textPane.getText() + curso + "--");
+				relaciones.add(curso);
 			}
 		});
 		btnagregarel.setBounds(12, 189, 171, 25);
@@ -162,9 +242,66 @@ public class Inicio extends JFrame {
 		JButton btnest_rel = new JButton("Establecer relación");
 		btnest_rel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				estableceRelaciones(relaciones, cursos);
+				relacionesExistentes.add(textPane.getText());
+				textPane.setText("");
 			}
 		});
 		btnest_rel.setBounds(12, 226, 171, 25);
 		contentPane.add(btnest_rel);
+		
+		JButton btnRestriccion = new JButton("Restringir");
+		btnRestriccion.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String operador = ddlrestricciones.getSelectedItem().toString();
+				Curso c = cursos.get(ddlcursos.getSelectedIndex());
+				switch(operador) {
+					case ">":
+						for (int i = ddlhorarios.getSelectedIndex()+1; i <= 14; i++) {
+							c.agregaRestriccionHorario(HORARIOS.get(i));
+						}
+						break;
+					case ">=":
+						for (int i = ddlhorarios.getSelectedIndex(); i <= 14; i++) {
+							c.agregaRestriccionHorario(HORARIOS.get(i));
+						}
+						break;
+					case "<":
+						for (int i = 0; i < ddlhorarios.getSelectedIndex(); i++) {
+							c.agregaRestriccionHorario(HORARIOS.get(i));
+						}
+						break;
+					case "<=":
+						for (int i = 0; i <= ddlhorarios.getSelectedIndex(); i++) {
+							c.agregaRestriccionHorario(HORARIOS.get(i));
+						}
+						break;
+				} 
+			}
+		});
+		btnRestriccion.setBounds(343, 262, 164, 25);
+		contentPane.add(btnRestriccion);
+	}
+	
+	public static void estableceRelaciones(ArrayList <String> relaciones, ArrayList <Curso> cur) {
+/*		for(String s : relaciones) {
+			System.out.println(s + "...");
+		}
+		for(Curso k : cur) {
+			System.out.println(k + "...");
+		}*/
+		for(Curso c : cur) {
+			if(relaciones.contains(c.toString())) {
+				c.agregaDependencia(relaciones);
+/*				System.out.println(c.toString() + " y sus relaciones:");
+				System.out.println(c.verDependencias());
+				System.out.println("-----------");*/
+			}
+/*			} else {
+				System.out.println("Se excluyó a " + c.toString());
+				System.out.println(c.verDependencias());
+			}*/
+		}
+		relaciones.clear();
 	}
 }

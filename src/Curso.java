@@ -5,11 +5,13 @@ public class Curso {
 	ArrayList <String> dependencias;
 	ArrayList <String> recursosProhibidos;
 	String horario;
+	int dependenciasEliminadas; //Atributo para ir quitando dependencias.
 	
 	public Curso(String nombre) {
 		this.nombre = nombre;
 		dependencias = new ArrayList<String>();
 		recursosProhibidos = new ArrayList<String>();
+		dependenciasEliminadas = 0; ///Se inicia en 0.
 	}
 	
 	public boolean equals(Curso c) {
@@ -63,12 +65,31 @@ public class Curso {
 		return dependencias.size();
 	}
 	
-	public String estableceHorario(ArrayList <String> horarios) {
+	public String formato() {
+		StringBuilder stb = new StringBuilder();
+		stb.append("Nombre: " + nombre + "\n");
+		stb.append("Dependencias: ");
+		for (String s : dependencias) {
+			stb.append(" " + s);
+		}
+		stb.append("\n");
+		stb.append("Horario: " + horario + "\n");
+		stb.append("Recursos prohibidos: ");
+		for (String s : recursosProhibidos) {
+			stb.append(" " + s);
+		}
+		
+		stb.append("\n");
+		
+		return stb.toString();
+	}
+	
+	public String estableceHorario(ArrayList <String> horarios, ArrayList <Boolean> saturados) {
 		boolean done = false;
 		int i = 0;
 		
 		while(!done) {
-			if(!recursosProhibidos.contains(horarios.get(i))) {
+			if(!recursosProhibidos.contains(horarios.get(i)) && !saturados.get(i)) {
 				horario = horarios.get(i);
 				done = true;
 			} else {
@@ -81,5 +102,9 @@ public class Curso {
 		}
 		
 		return horario;
+	}
+
+	public boolean verificaRelacion(String relacionado) {
+		return dependencias.contains(relacionado);
 	}
 }

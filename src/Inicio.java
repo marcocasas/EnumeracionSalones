@@ -28,7 +28,9 @@ public class Inicio extends JFrame {
 	ArrayList <String> relaciones = new ArrayList<String>();
 	ArrayList <String> relacionesExistentes = new ArrayList<String>();
 	ArrayList <String> HORARIOS = new ArrayList<String>();
+	ArrayList <Integer> cuentaHorarios = new ArrayList<Integer>();
 	ArrayList <Curso> cursosAsignados = new ArrayList<Curso>();
+	ArrayList <Boolean> horariosSaturados = new ArrayList<Boolean>();
 
 	/**
 	 * Launch the application.
@@ -65,6 +67,36 @@ public class Inicio extends JFrame {
 		HORARIOS.add("19:00");
 		HORARIOS.add("20:00");
 		HORARIOS.add("21:00");
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		cuentaHorarios.add(0);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
+		horariosSaturados.add(false);
 		
 		setTitle("Inicio");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -167,38 +199,47 @@ public class Inicio extends JFrame {
 				boolean done = false;
 				String horarioAsignado;
 				
-				while (!done) {
-					int max = 0;
-					int indiceMax = 0;
-					int i = 0;
-					
-					for(Curso c : cursos) {
-						int numDepActual = c.cuentaDependencias();
-						if(c.cuentaDependencias() > max) {
-							max = numDepActual;
-							indiceMax = i;
-							i++;
-						}
-					}
-					
-					Curso curActual = cursos.get(indiceMax);
-					horarioAsignado = curActual.estableceHorario(HORARIOS);
-					cursosAsignados.add(curActual);
-					cursos.remove(curActual);
-					
-					for(String cursosDep : curActual.dependencias) {
-						System.out.println(cursosDep);
-						//NO FUNCIONA
-						System.out.println(cursos.indexOf(new Curso(cursosDep)));
-						cursos.get(cursos.indexOf(new Curso(cursosDep))).agregaRestriccionHorario(horarioAsignado);;
-					}
-					
-					done = cursos.isEmpty();
+				for(Curso c: cursos) {
+					System.out.println(c.formato());
 				}
 				
-				for(Curso c: cursosAsignados) {
-					System.out.println(c.toString());
-					System.out.println(c.horario);
+				while (!done) {
+					int indiceConMaxDep = 0;
+					int maxDep = 0;
+					int contador = 0;
+					
+					for(Curso c : cursos) {
+						if (c.cuentaDependencias() > maxDep) {
+							indiceConMaxDep = contador;
+							maxDep = c.cuentaDependencias();
+						}
+						contador++;
+					}
+					
+					/*
+					 * Problema: Modifico cursos, por lo tanto los indices ya no 
+					 * son absolutos y no puedo moverme simultaneamente con el
+					 * en el conteo y en lista de saturacion. RESOLVER
+					 * 
+					 * */
+					Curso aAsignar = cursos.get(indiceConMaxDep);
+					horarioAsignado = aAsignar.estableceHorario(HORARIOS,horariosSaturados);
+					cursosAsignados.add(aAsignar);
+					cursos.remove(aAsignar);
+					cuentaHorarios.set(indiceConMaxDep, cuentaHorarios.get(indiceConMaxDep) + 1);
+					verificaSaturacion(horariosSaturados,cuentaHorarios,salones);
+					
+					/*
+					 * Restringimos el horario a todas las materias relacionadas
+					 * con aquella que cuyo horario acabamos de asignar.
+					 */
+					estableceRestricciones(aAsignar.toString(),cursos,horarioAsignado);
+					
+					System.out.println("Cursos asignados:");
+					for(Curso c : cursosAsignados) {
+						System.out.println(c.formato());
+					}
+					done = cursos.isEmpty();
 				}
 			}
 		});
@@ -257,22 +298,22 @@ public class Inicio extends JFrame {
 				Curso c = cursos.get(ddlcursos.getSelectedIndex());
 				switch(operador) {
 					case ">":
-						for (int i = ddlhorarios.getSelectedIndex()+1; i <= 14; i++) {
+						for (int i = 0; i <= ddlhorarios.getSelectedIndex(); i++) {
 							c.agregaRestriccionHorario(HORARIOS.get(i));
 						}
 						break;
 					case ">=":
-						for (int i = ddlhorarios.getSelectedIndex(); i <= 14; i++) {
-							c.agregaRestriccionHorario(HORARIOS.get(i));
-						}
-						break;
-					case "<":
 						for (int i = 0; i < ddlhorarios.getSelectedIndex(); i++) {
 							c.agregaRestriccionHorario(HORARIOS.get(i));
 						}
 						break;
+					case "<":
+						for (int i = ddlhorarios.getSelectedIndex(); i <= 14; i++) {
+							c.agregaRestriccionHorario(HORARIOS.get(i));
+						}
+						break;
 					case "<=":
-						for (int i = 0; i <= ddlhorarios.getSelectedIndex(); i++) {
+						for (int i = ddlhorarios.getSelectedIndex()+1; i <= 14; i++) {
 							c.agregaRestriccionHorario(HORARIOS.get(i));
 						}
 						break;
@@ -284,24 +325,27 @@ public class Inicio extends JFrame {
 	}
 	
 	public static void estableceRelaciones(ArrayList <String> relaciones, ArrayList <Curso> cur) {
-/*		for(String s : relaciones) {
-			System.out.println(s + "...");
-		}
-		for(Curso k : cur) {
-			System.out.println(k + "...");
-		}*/
 		for(Curso c : cur) {
 			if(relaciones.contains(c.toString())) {
 				c.agregaDependencia(relaciones);
-/*				System.out.println(c.toString() + " y sus relaciones:");
-				System.out.println(c.verDependencias());
-				System.out.println("-----------");*/
 			}
-/*			} else {
-				System.out.println("Se excluyó a " + c.toString());
-				System.out.println(c.verDependencias());
-			}*/
 		}
 		relaciones.clear();
+	}
+	
+	public static void estableceRestricciones(String asignado, ArrayList <Curso> listaCursos, String horario) {
+		for (Curso c : listaCursos) {
+			if (c.verificaRelacion(asignado)) {
+				c.agregaRestriccionHorario(horario);
+			}
+		}
+	}
+	
+	public static void verificaSaturacion(ArrayList <Boolean> horSaturados, ArrayList <Integer> conteo, int salones) {
+		for (int i = 0; i < horSaturados.size()-1; i++) {
+			if(conteo.get(i) >= salones) {
+				horSaturados.set(i,true);
+			}
+		}
 	}
 }

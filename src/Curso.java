@@ -6,12 +6,14 @@ public class Curso {
 	ArrayList <String> recursosProhibidos;
 	String horario;
 	int dependenciasEliminadas; //Atributo para ir quitando dependencias.
+	boolean asignado; //Indicará si ya le di horario o aún no.
 	
 	public Curso(String nombre) {
 		this.nombre = nombre;
 		dependencias = new ArrayList<String>();
 		recursosProhibidos = new ArrayList<String>();
 		dependenciasEliminadas = 0; ///Se inicia en 0.
+		asignado = false;
 	}
 	
 	public boolean equals(Curso c) {
@@ -89,6 +91,14 @@ public class Curso {
 		int i = 0;
 		
 		while(!done) {
+			
+			//
+			System.out.println(this.toString() + " --- estableciendo horario");
+			System.out.println(horarios.get(i));
+			System.out.println(!recursosProhibidos.contains(horarios.get(i)));
+			System.out.println(!saturados.get(i));
+			//
+			
 			if(!recursosProhibidos.contains(horarios.get(i)) && !saturados.get(i)) {
 				horario = horarios.get(i);
 				done = true;
@@ -101,6 +111,7 @@ public class Curso {
 			}
 		}
 		
+		this.asignado = true;
 		return horario;
 	}
 

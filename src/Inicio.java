@@ -132,6 +132,8 @@ public class Inicio extends JFrame {
 				} catch(Exception e) {
 					System.out.println("Por favor, inserte números");
 				}
+				
+				salones_tb.setText("");
 			}
 		});
 		btnAadirSalones.setBounds(343, 72, 164, 25);
@@ -197,23 +199,50 @@ public class Inicio extends JFrame {
 		btncalculadist.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean done = false;
-				String horarioAsignado;
+				String horarioAsignado = "";
+				//System.out.println("hir");
 				
 				for(Curso c: cursos) {
+					//System.out.println("here");
 					System.out.println(c.formato());
 				}
 				
-				while (!done) {
+				//
+				int iters = 0;
+				//
+				
+				while (!done && iters<10) {
+					//
+					iters++;
+					//
+					
 					int indiceConMaxDep = 0;
 					int maxDep = 0;
 					int contador = 0;
 					
 					for(Curso c : cursos) {
-						if (c.cuentaDependencias() > maxDep) {
-							indiceConMaxDep = contador;
-							maxDep = c.cuentaDependencias();
+						System.out.println("Curso en revision...");
+						System.out.println(c.toString());
+						System.out.println(c.asignado);
+						boolean revisa = true;
+						
+						if (revisa) {
+							if(!c.asignado && c.cuentaDependencias() == 0) {
+								revisa = false;
+								indiceConMaxDep = contador;
+								maxDep = c.cuentaDependencias();
+							} else {
+								if (!c.asignado && c.cuentaDependencias() > maxDep) {
+									indiceConMaxDep = contador;
+									maxDep = c.cuentaDependencias();
+									
+									//
+									System.out.println(contador);
+									//
+								}
+								contador++;
+							}
 						}
-						contador++;
 					}
 					
 					/*
@@ -221,11 +250,11 @@ public class Inicio extends JFrame {
 					 * son absolutos y no puedo moverme simultaneamente con el
 					 * en el conteo y en lista de saturacion. RESOLVER
 					 * 
+					 * Veamos si funciona colocando el remove hasta el final.
 					 * */
 					Curso aAsignar = cursos.get(indiceConMaxDep);
 					horarioAsignado = aAsignar.estableceHorario(HORARIOS,horariosSaturados);
 					cursosAsignados.add(aAsignar);
-					cursos.remove(aAsignar);
 					cuentaHorarios.set(indiceConMaxDep, cuentaHorarios.get(indiceConMaxDep) + 1);
 					verificaSaturacion(horariosSaturados,cuentaHorarios,salones);
 					
@@ -239,7 +268,8 @@ public class Inicio extends JFrame {
 					for(Curso c : cursosAsignados) {
 						System.out.println(c.formato());
 					}
-					done = cursos.isEmpty();
+					
+					done = checkDone(cursos);
 				}
 			}
 		});
@@ -347,5 +377,23 @@ public class Inicio extends JFrame {
 				horSaturados.set(i,true);
 			}
 		}
+	}
+	
+	/**
+	 * Metodo para revisar si ya terminamos las asignaciones.
+	 * 
+	 * @param cur
+	 * @return 
+	 */
+	public static boolean checkDone(ArrayList <Curso> cur) {
+		boolean resp = true;
+		int i = 0;
+		
+		while(resp && i < cur.size()) {
+			resp = resp && cur.get(i).asignado;
+			i++;
+		}
+		
+		return resp;
 	}
 }
